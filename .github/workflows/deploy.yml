@@ -1,8 +1,10 @@
 name: CI/CD - Build & Deploy
 
+
 concurrency:
-  group: deploy-reesky-student1
+  group: deploy-mentor
   cancel-in-progress: true
+
 
 on:
   push:
@@ -10,18 +12,22 @@ on:
       - main
       - master
 
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
+
     env:
-      IMAGE_NAME: reesky-student1
+      IMAGE_NAME: spring-app-student1
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       APP_DIR: /home/backend/spring-app/student1
+
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v6
+
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -29,11 +35,10 @@ jobs:
           java-version: "21"
           distribution: "temurin"
 
-      - name: Grant execute permission for mvnw
-        run: chmod +x mvnw
 
       - name: Build application
         run: ./mvnw -B clean package -DskipTests
+
 
       # 🐳 Docker Login
       - name: Login to DockerHub
@@ -41,6 +46,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
 
       # 🐳 Build & Push
       - name: Build and Push Docker Image
@@ -51,6 +57,7 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+      
 
       # 📦 Copy compose
       - name: Copy docker-compose to VPS
@@ -63,6 +70,7 @@ jobs:
           target: "${{ env.APP_DIR }}"
           overwrite: true
 
+
       # 🚀 DEPLOY ON VPS (PULL & RUN ONLY)
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -73,17 +81,21 @@ jobs:
           script: |
             cd ${{ env.APP_DIR }}
             echo "🚀 Starting deployment..."
-
+            
+            
             echo "📥 Pulling latest image..."
             docker compose pull
-
+            
+            
             echo "🔄 Restarting services..."
             docker compose down
             docker compose up -d
-
+            
+            
             echo "⏳ Waiting for health check..."
             sleep 30
-
+            
+            
             # Verify deployment
             if docker compose ps | grep -q "Up"; then
               echo "✅ Deployment completed successfully!"

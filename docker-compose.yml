@@ -1,14 +1,13 @@
-version: "3.9"
 
 services:
-  reesky-student1:
+  spring-app-student1:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${DOCKERHUB_USERNAME}/reesky-student1:latest
-    container_name: reesky-student1
+    image: ${DOCKERHUB_USERNAME}/spring-app-student1:latest
+    container_name: spring-app-student1
     ports:
-      - "${APP_PORT:-9001}:${APP_PORT:-9001}"
+      - ${APP_PORT:-9001}:${APP_PORT:-9001}
     env_file:
       - .env
     restart: always
@@ -16,7 +15,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --quiet --tries=1 --spider http://localhost:${APP_PORT:-9001}/actuator/health || exit 1"
+          "wget --quiet --tries=1 --spider http://localhost:$${APP_PORT:-9000}/actuator/health || exit 1",
         ]
       interval: 30s
       timeout: 10s
@@ -25,6 +24,8 @@ services:
     networks:
       - be_classroom_net
 
+
 networks:
   be_classroom_net:
     external: true
+
